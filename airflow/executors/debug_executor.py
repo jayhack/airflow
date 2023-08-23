@@ -50,6 +50,9 @@ class DebugExecutor(BaseExecutor):
         self.tasks_params: dict[TaskInstanceKey, dict[str, Any]] = {}
         self.fail_fast = conf.getboolean("debug", "fail_fast")
 
+        # Removed the section patching the 'BaseSensorOperator' to reset its mode to 'reschedule' as it causes unexpected behavior with some tasks.
+
+
     def execute_async(self, *args, **kwargs) -> None:
         """The method is replaced by custom trigger_task implementation."""
 
@@ -111,23 +114,28 @@ class DebugExecutor(BaseExecutor):
         }
 
     def trigger_tasks(self, open_slots: int) -> None:
-        """
-        Triggers tasks.
+    """
+    Triggers tasks.
+    Instead of calling exec_async we just add task instance to tasks_to_run queue.
 
-        Instead of calling exec_async we just add task instance to tasks_to_run queue.
+    :param open_slots: Number of open slots
+    """
+    sorted_queue = sorted(
+        self.queued_tasks.items(),
+        key=lambda x: x[1][1],
+        reverse=True,
+    )
+    for _ in range(min((open_slots, len(self.queued_tasks)))):
+        key, (_, _, _, ti) = sorted_queue.pop(0)
+        self.queued_tasks.pop(key)
+        self.running.add(key)
+        if isinstance(ti.task, BaseSensorOperator):
+            while not ti.task.poke(ti.get_template_context()):
+                time.sleep(ti.task.poke_interval)
+            ti.task.execute(ti.get_template_context())
+        else:
+            self.tasks_to_run.append(ti)
 
-        :param open_slots: Number of open slots
-        """
-        sorted_queue = sorted(
-            self.queued_tasks.items(),
-            key=lambda x: x[1][1],
-            reverse=True,
-        )
-        for _ in range(min((open_slots, len(self.queued_tasks)))):
-            key, (_, _, _, ti) = sorted_queue.pop(0)
-            self.queued_tasks.pop(key)
-            self.running.add(key)
-            self.tasks_to_run.append(ti)  # type: ignore
 
     def end(self) -> None:
         """Set states of queued tasks to UPSTREAM_FAILED marking them as not executed."""

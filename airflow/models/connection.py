@@ -189,8 +189,11 @@ class Connection(Base, LoggingMixin):
 
     def _parse_from_uri(self, uri: str):
         uri_parts = urlsplit(uri)
-        conn_type = uri_parts.scheme
-        self.conn_type = self._normalize_conn_type(conn_type)
+        if uri_parts.scheme == '':
+            raise AirflowException(f'Invalid connection string: {uri}. No Scheme detected.')
+        if uri_parts.netloc == '':
+            raise AirflowException(f'Invalid connection string: {uri}. No location detected.')
+        self.conn_type = self._normalize_conn_type(uri_parts.scheme)
         self.host = _parse_netloc_to_hostname(uri_parts)
         quoted_schema = uri_parts.path[1:]
         self.schema = unquote(quoted_schema) if quoted_schema else quoted_schema
@@ -203,6 +206,7 @@ class Connection(Base, LoggingMixin):
                 self.extra = query[self.EXTRA_KEY]
             else:
                 self.extra = json.dumps(query)
+
 
     def get_uri(self) -> str:
         """Return connection in URI format"""

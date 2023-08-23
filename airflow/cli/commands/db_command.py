@@ -1,4 +1,13 @@
-# Licensed to the Apache Software Foundation (ASF) under one
+# Licensed to the Apache Software Foundation (ASF),
+    {
+        "func": clean_all_expired_sessions,
+        "name": "clean-all-expired-sessions",
+        "help": "Clean all expired sessions from session table",
+        "args": (DRYRUN_ARG, VERBOSE_ARG, SKIP_ARCHIVE_ARG),
+    },
+)
+
+ under one
 # or more contributor license agreements.  See the NOTICE file
 # distributed with this work for additional information
 # regarding copyright ownership.  The ASF licenses this file
@@ -207,3 +216,18 @@ def cleanup_tables(args):
         confirm=not args.yes,
         skip_archive=args.skip_archive,
     )
+
+from airflow.utils import cleanup_expired_sessions
+
+@cli_utils.action_logging
+@provide_session
+def clean_all_expired_sessions(args, session=None):
+    """Clean expired sessions"""
+    cleanup_expired_sessions(
+        dry_run=args.dry_run,
+        verbose=args.verbose,
+        skip_archive=args.skip_archive,
+        session=session
+    )
+   
+

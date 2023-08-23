@@ -111,7 +111,17 @@ class TestDebugExecutor:
         assert not executor.tasks_to_run
         change_state_mock.assert_has_calls(
             [
-                mock.call(ti1.key, State.FAILED),
+                                mock.call(ti1.key, State.FAILED),
                 mock.call(ti2.key, State.UPSTREAM_FAILED),
             ]
         )
+
+def test_sensor_task(self):
+    sensor = DummySensor(task_id='dummy_sensor', owner='test')
+    ti = TaskInstance(task=sensor, execution_date=datetime.utcnow())
+    self.debug_executor.queue_task_instance(ti)
+    self.debug_executor.heartbeat()
+    assert self.debug_executor.event_buffer[ti.key][0] == State.SUCCESS
+    assert self.debug_executor.running == set()
+
+

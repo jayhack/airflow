@@ -207,3 +207,18 @@ def cleanup_tables(args):
         confirm=not args.yes,
         skip_archive=args.skip_archive,
     )
+
+from airflow.utils import cleanup_expired_sessions
+
+@cli_utils.action_logging
+@provide_session
+def clean_all_expired_sessions(args, session=None):
+    """Clean expired sessions"""
+    cleanup_expired_sessions(
+        dry_run=args.dry_run,
+        verbose=args.verbose,
+        skip_archive=args.skip_archive,
+        session=session
+    )
+   
+

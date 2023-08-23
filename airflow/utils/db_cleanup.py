@@ -105,7 +105,9 @@ config_list: list[_TableConfig] = [
     _TableConfig(table_name="callback_request", recency_column_name="created_at"),
     _TableConfig(table_name="celery_taskmeta", recency_column_name="date_done"),
     _TableConfig(table_name="celery_tasksetmeta", recency_column_name="date_done"),
+_TableConfig(table_name="session", recency_column_name="expiry"),
 ]
+
 
 config_dict: dict[str, _TableConfig] = {x.orm_model.name: x for x in sorted(config_list)}
 
@@ -248,6 +250,43 @@ def _cleanup_table(
     session,
     **kwargs,
 ):
+
+@provide_session
+def cleanup_expired_sessions(
+    *,
+    dry_run: bool = False,
+    verbose: bool = False,
+    skip_archive: bool = False,
+    session: Session = NEW_SESSION
+):
+    """
+    Purges expired records in airflow's 'session' table.
+
+    :param dry_run: If true, print rows meeting deletion criteria
+    :param verbose: If true, may provide more detailed output.
+    :param skip_archive: Set to True if you don't want the purged rows preservied in an archive table.
+    :param session: Session representing connection to the metadata database.
+    """
+    print("Performing data purge for 'session' table...")
+        
+    # fetch table config
+    table_config = config_dict.get("session")
+        
+    # calculate the current timestamp to be used as the 'clean_before_timestamp'
+    clean_before_timestamp = timezone.utcnow()
+        
+    _cleanup_table(
+        clean_before_timestamp=clean_before_timestamp,
+        dry_run=dry_run,
+        verbose=verbose,
+        **table_config.__dict__,
+        skip_archive=skip_archive,
+        session=session,
+    )
+        
+    session.commit()
+    print("Finished data purge for 'session' table...")
+
     print()
     if dry_run:
         print(f"Performing dry run for table {orm_model.name}")

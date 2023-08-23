@@ -118,6 +118,16 @@
     var hostName = '{{ hostname }}';
     var csrfToken = '{{ csrf_token() }}';
     $('time[title]').tooltip();
+    <div id="clock-format">
+      <select id="clock-format-select">
+        <option value="HH:mm">24 Hour Time (HH:MM)</option>
+        <option value="hh:mm A">12 Hour Time (hh:mm A)</option>
+        <!-- Add other common format options as needed -->
+        <option value="custom">Custom</option>
+      </select>
+      <input type="text" id="custom-format-input" style="display: none;">
+    </div>
+    
   </script>
   <script src="{{ url_for_asset('moment.js') }}"></script>
   <script src="{{ url_for_asset('main.js') }}"></script>

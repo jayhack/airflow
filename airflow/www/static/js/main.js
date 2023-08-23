@@ -53,11 +53,44 @@ function changeDisplayedTimezone(tz) {
 
   setDisplayedTimezone(tz);
   displayTime();
-  $('body').trigger({
+    $('body').trigger({
     type: 'airflow.timezone-change',
     timezone: tz,
   });
 }
+
+// Initialization
+const savedFormat = localStorage.getItem('savedClockFormat');
+let format;
+if (savedFormat === 'custom') {
+  format = localStorage.getItem('savedCustomClockFormat');
+  $('#custom-format-input').show().val(format);
+} else {
+  format = savedFormat || 'HH:mm'; // fallback to the current default format
+  $('#clock-format-select').val(format);
+}
+
+// Set up event handling for the new input elements
+$('#clock-format-select').change((e) => {
+  const selectedFormat = e.target.value;
+  localStorage.setItem('savedClockFormat', selectedFormat);
+  if (selectedFormat === 'custom') {
+    $('#custom-format-input').show();
+  } else {
+    $('#custom-format-input').hide();
+  }
+});
+$('#custom-format-input').change((e) => {
+  localStorage.setItem('savedCustomClockFormat', e.target.value);
+});  
+
+function displayTime() {
+  const now = moment();
+  $('#clock')
+    .attr('datetime', now.format(dateTimeAttrFormat))
+    .html(`${now.format(format)} <strong>${formatTimezone(now)}</strong>`);
+}
+
 
 const el = document.createElement('span');
 
